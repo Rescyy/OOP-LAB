@@ -1,5 +1,8 @@
 #include <ncurses.h>
 #include <stdlib.h>
+#include <string.h>
+
+FILE *saves;
 
 typedef struct block{
     int index;
@@ -61,8 +64,7 @@ int blockHeight(block *head){
 
 int displayMenu(){
     int ch;
-    printw("P to play\n");
-    printw("Q to exit\n");
+    printw("P to play\nS to load save\nQ to exit\n");
     while(1){
         noecho();
         ch = getch();
@@ -75,12 +77,23 @@ int displayMenu(){
             case 'q':
                 return 0;
                 break;
+            case 's':
+                clear();
+                refresh();
+                return 2;
+                break;
         }
     }
 }
 
-int displayChoice(block *left){
-    int ch, n = 4;
+void deleteList(block *head){
+    head->next = NULL;
+}
+
+int displayChoice(block *left, block *mid, block *right){
+    int ch, n = 3;
+    deleteList(mid);
+    deleteList(right);
     while(1){
         printw("Press W and S to choose number of blocks: %d\nPress ENTER to confirm\n", n);
         noecho();
@@ -97,13 +110,10 @@ int displayChoice(block *left){
                 return n;
         }
         if(n < 3)n = 3;
+        if(n > 25)n = 25;
         clear();
         refresh();
     }
-}
-
-void deleteList(block *head){
-    head->next = NULL;
 }
 
 void displayTowers(int n, block *left, block *mid, block *right, int returnValue){
@@ -156,7 +166,7 @@ void displayTowers(int n, block *left, block *mid, block *right, int returnValue
     display[y - 1][x] = '3';
     x = 6 * n + 3;
     for(int i = 0; i < y; i++){
-        for(int j = 0; j < x; j++){
+        for(int j = 0; j < x - 1; j++){
             if(display[i][j] == '#'){
                 attron(COLOR_PAIR(1));
                 printw("#");
@@ -177,8 +187,17 @@ void displayTowers(int n, block *left, block *mid, block *right, int returnValue
             printw("You can't put this block here\n");
             break;
     }
-    printw("U to undo\nR to restart\nQ to go back to menu\n\n");
+    printw("U to undo\nR to restart\nS to save\nQ to go back to menu\n\n");
+    for(int i = 0; i < y; i++){
+        free(display[i]);
+    }
+}
 
+void fprintno(FILE *saves, int index){
+    if(index < 10){
+        fprintf(saves, "0%d", index);
+    }else
+    fprintf(saves, "%d",index);
 }
 
 int playTowers(int n, block *left, block *mid, block *right){
@@ -243,12 +262,15 @@ int playTowers(int n, block *left, block *mid, block *right){
                 case 49:
                     if(ch2 == 50)moveBlock(left, mid);
                     if(ch2 == 51)moveBlock(left, right);
+                    break;
                 case 50:
                     if(ch2 == 49)moveBlock(mid, left);
                     if(ch2 == 51)moveBlock(mid, right);
+                    break;
                 case 51:
                     if(ch2 == 49)moveBlock(right, left);
                     if(ch2 == 50)moveBlock(right, mid);
+                    break;
             }
             break;
         case 'r':
@@ -257,6 +279,28 @@ int playTowers(int n, block *left, block *mid, block *right){
             deleteList(right);
             init(left, n);
             break;
+        case 's':
+            history->next = NULL;
+            key = 0;
+            saves = fopen("saves.txt", "w");
+            fprintno(saves, n);
+            while(left->next != NULL){
+                left = left->next;
+                fprintno(saves, left->index);
+            }
+            fprintf(saves, ",");
+            while(mid->next != NULL){
+                mid = mid->next;
+                fprintno(saves, mid->index);
+            }
+            fprintf(saves, ",");
+            while(right->next != NULL){
+                right = right->next;
+                fprintno(saves, right->index);
+            }
+            fprintf(saves, ",");
+            fclose(saves);
+            break;
         }
         clear();
         refresh();
@@ -264,29 +308,70 @@ int playTowers(int n, block *left, block *mid, block *right){
     return 0;
 }
 
-void displaySaves(){
+int returnInt(char a, char b){
+    a -= 48;
+    b -= 48;
+    return ((int)a) * 10 + (int)b;
+}
+
+int displaySaves(FILE *saves, block *left, block *mid, block *right){
+    saves = fopen("saves.txt", "r");
+    char *text = malloc(100 *sizeof(char));
+    //rewind(saves);
+    fscanf(saves, "%s", text);
+    if(!strlen(text)){
+        printw("Save one game first!!!\n\nPress any key to continue\n\n");
+        return 1;
+    }
+    int n = returnInt(text[0], text[1]), index;
+    int i = 2;
+    while(text[i] != ','){
+        index = returnInt(text[i], text[i + 1]);
+        left->next = newblock(index);
+        left = left->next;
+        i += 2;
+    }
+    i++;
+    while(text[i] != ','){
+        index = returnInt(text[i], text[i + 1]);
+        mid->next = newblock(index);
+        mid = mid->next;
+        i += 2;
+    }
+    i++;
+    while(text[i] != ','){
+        index = returnInt(text[i], text[i + 1]);
+        right->next = newblock(index);
+        right = right->next;
+        i += 2;
+    }
+    fclose(saves);
+    free(text);
+    return n;
 }
 
 int main(){
-    //FILE *saves;
-    //saves = fopen("saves.txt", "w+");
     block *left = malloc(sizeof(block)),
     *mid = malloc(sizeof(block)),
     *right = malloc(sizeof(block));
     initscr();
     start_color();
     init_pair(1, COLOR_RED, COLOR_RED);
-    noecho();
     int n;
     int ch = 1;
     while(1){
         ch = displayMenu();
         if(ch == 1){
-            n = displayChoice(left);
+            n = displayChoice(left, mid, right);
             playTowers(n, left, mid, right);
-        }
+        }else
         if(ch == 2){
-            displaySaves();
+            n = displaySaves(saves, left, mid, right);
+            if(n == 1){
+                getch();
+                refresh();
+                clear();
+            }else
             playTowers(n, left, mid, right);
         }
         else break;
