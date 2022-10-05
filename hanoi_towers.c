@@ -186,6 +186,9 @@ void displayTowers(int n, block *left, block *mid, block *right, int returnValue
         case 2:
             printw("You can't put this block here\n");
             break;
+        case 3:
+            printw("This tower does not exist\n");
+            break;
     }
     printw("U to undo\nR to restart\nS to save\nQ to go back to menu\n\n");
     for(int i = 0; i < y; i++){
