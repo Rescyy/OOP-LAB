@@ -1,4 +1,5 @@
 #include <iostream>
+#include <array>
 using namespace std;
 
 int minint(int a, int b){
@@ -7,19 +8,24 @@ int minint(int a, int b){
     return a;
 }
 
-class Buildings{
+class Root{
+    protected:
+    string title;
+    public:
+    string askForTheirTitle(){
+        return title;
+    }
+};
+
+class Buildings : public Root{
     protected:
     int people;
-    char* title;
     public:
     int *checkonPeople(){
         return &people;
     }
     void print(){
         cout << "The " << title << " holds " << people << " people." << endl;
-    }
-    char *askForTheirTitle(){
-        return title;
     }
 };
 
@@ -40,7 +46,6 @@ class Gulag : public Economy{
         people = 0;
         stone = 0;
         lazy = 0;
-        title = (char*) malloc(11*sizeof(char));
         title = "Gulag";
     }
     void gatherStone(){
@@ -63,7 +68,6 @@ class Colhoz : public Economy{
         people = 0;
         iron = 0;
         lazy = 0;
-        title = (char*) malloc(11*sizeof(char));
         title = "Colhoz";
     }
     void growCarrots(){
@@ -97,7 +101,6 @@ class Fabrica : public Economy{
         lazy = 0;
         iron = 0;
         stone = 0;
-        title = (char*) malloc(11*sizeof(char));
         title = "Fabrica";
     }
     void craftProduct(){
@@ -147,7 +150,6 @@ class Apartament : public Civil{
         people = 10;
         maxPeople = 10;
         toddlers = 0;
-        title = (char*) malloc(11*sizeof(char));
         title = "Apartament";
     }
     int *countToddlers(){
@@ -195,11 +197,97 @@ class School : public Civil{
     School(){
         people = 0;
         children = 0;
-        title = (char*) malloc(11*sizeof(char));
         title = "School";
     }
     void educateChildren(){
         people += children;
         children = 0;
+    }
+};
+
+class People : public Root{
+    protected:
+    int age;
+    public:
+    void askThemAboutTheirAge(){
+        cout << "The " << title << " is " << age << " years old." << endl;
+    }
+};
+
+class Colhoznic : public People{
+    public:
+    Colhoznic(){
+        age = 20;
+        title = "Colhoznic";
+    }
+    void deliverProducts(int *source, int *destination){
+        *destination += *source;
+        *source = 0;
+        age++;
+    }
+};
+
+class Grajdanin : public People{
+    public:
+    Grajdanin(){
+        age = 20;
+        title = "Grajdanin";
+    }
+    void growChildren(int *children, int *toddlers){
+        *children += *toddlers;
+        *toddlers = 0;
+        age++;
+    }
+    void sendChildrenToSchool(int *source, int *destination){
+        *destination += *source;
+        *source = 0;
+        age++;
+    }
+};
+
+class Guard : public People{
+    public:
+    Guard(){
+        age = 20;
+        title = "Guard";
+    }
+    void killPrisoner(int *prisoners, int *lazy){
+        cout << *lazy << " prisoners were executed due to their laziness." << endl;
+        *prisoners -= *lazy;
+        *lazy = 0;
+        age++;
+    }
+};
+
+class KGB : public People{
+    public:
+    KGB(){
+        age = 20;
+        title = "Secret Agent";
+    }
+    void fireColhoznic(int *gulag, int *people, int *lazy, string title){
+        *people -= *lazy;
+        cout << *lazy << " " << title << " colhoznics were lazy, a horrible fate awaits them." << endl;
+        *gulag += *lazy;
+        *lazy = 0;
+    }
+};
+
+class Teacher : public People{
+    public:
+    Teacher(){
+        title = "Teacher";
+        age = 20;
+    }
+    void sendThemHome(int *source, int maxPeople, int *destination){
+        if(*source > maxPeople - *destination){
+        *source -= maxPeople - *destination;
+        cout << "Graduates sent home " << maxPeople - *destination << endl;
+        *destination = maxPeople;
+        }else{
+        *destination += *source;
+        cout << "Graduates sent home " << *source << endl;
+        *source = 0;
+        }
     }
 };
