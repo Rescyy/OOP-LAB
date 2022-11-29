@@ -1,0 +1,1 @@
+In this lab 6, I captured the simulation into the MVC framework.

@@ -1,4 +1,6 @@
 const int
+messagesOn = 0,
+
 HungerFromCarrots = 2,
 ironForProduct = 5,
 stoneForCement = 1,
@@ -44,7 +46,7 @@ initialCarrots = 10
 
 const float
 chanceInfantDeath = 1,
-chanceAgeDeath = 0.1F,
+chanceAgeDeath = 0.05F,
 
 productApartament = 1,
 cementApartament = 1,
